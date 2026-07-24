@@ -19,6 +19,7 @@ export const authService = {
       password: data.password,
       options: {
         data: { first_name: data.firstName, last_name: data.lastName },
+        emailRedirectTo: `${window.location.origin}/`,
       },
     })
     if (error) throw new Error(error.message)
