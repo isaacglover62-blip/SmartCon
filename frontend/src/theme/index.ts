@@ -4,8 +4,8 @@ export function createAppTheme(mode: 'light' | 'dark') {
   return createTheme({
     palette: {
       mode,
-      primary: { main: '#6366f1', light: '#818cf8', dark: '#4f46e5', contrastText: '#fff' },
-      secondary: { main: '#ec4899', light: '#f472b6', dark: '#db2777' },
+      primary: { main: '#2563eb', light: '#60a5fa', dark: '#1d4ed8', contrastText: '#fff' },
+      secondary: { main: '#0ea5e9', light: '#38bdf8', dark: '#0284c7' },
       success: { main: '#10b981' },
       warning: { main: '#f59e0b' },
       error: { main: '#ef4444' },

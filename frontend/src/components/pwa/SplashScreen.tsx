@@ -25,7 +25,7 @@ export function SplashScreen({ onDone }: Props) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0a0a1e 0%, #0f0f23 50%, #1a0a2e 100%)',
+        background: 'linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #0d1f3c 100%)',
         transition: 'opacity 0.6s ease',
         opacity: phase === 'out' ? 0 : 1,
       }}
@@ -36,7 +36,7 @@ export function SplashScreen({ onDone }: Props) {
         width: 320,
         height: 320,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%)',
         animation: 'pulse-ring 2.5s ease-in-out infinite',
         '@keyframes pulse-ring': {
           '0%, 100%': { transform: 'scale(1)', opacity: 0.6 },
@@ -48,7 +48,7 @@ export function SplashScreen({ onDone }: Props) {
         width: 200,
         height: 200,
         borderRadius: '50%',
-        border: '1px solid rgba(99,102,241,0.2)',
+        border: '1px solid rgba(37,99,235,0.25)',
         animation: 'ring-expand 2.5s ease-in-out infinite 0.4s',
         '@keyframes ring-expand': {
           '0%': { transform: 'scale(0.85)', opacity: 0 },
@@ -61,7 +61,7 @@ export function SplashScreen({ onDone }: Props) {
         width: 200,
         height: 200,
         borderRadius: '50%',
-        border: '1px solid rgba(236,72,153,0.15)',
+        border: '1px solid rgba(96,165,250,0.15)',
         animation: 'ring-expand 2.5s ease-in-out infinite 1.2s',
       }} />
 
@@ -85,7 +85,7 @@ export function SplashScreen({ onDone }: Props) {
           position: 'absolute',
           inset: -8,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(37,99,235,0.4) 0%, transparent 70%)',
           filter: 'blur(8px)',
         }} />
         <img
@@ -108,18 +108,11 @@ export function SplashScreen({ onDone }: Props) {
         }}
       >
         <Typography
-          sx={{
-            fontSize: 32,
-            fontWeight: 800,
-            letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #818cf8 0%, #6366f1 40%, #ec4899 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            lineHeight: 1,
-          }}
+          component="div"
+          sx={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1 }}
         >
-          SmartCon
+          <Box component="span" sx={{ color: '#e2e8f0' }}>smart</Box>
+          <Box component="span" sx={{ color: '#2563eb' }}>Con</Box>
         </Typography>
         <Typography
           sx={{
@@ -155,7 +148,7 @@ export function SplashScreen({ onDone }: Props) {
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1, #ec4899)',
+              background: 'linear-gradient(135deg, #60a5fa, #2563eb)',
               animation: 'dot-bounce 1.2s ease-in-out infinite',
               animationDelay: `${i * 0.2}s`,
               '@keyframes dot-bounce': {

@@ -54,18 +54,11 @@ export function LoginPage() {
           </Box>
           <Box sx={{ textAlign: 'left' }}>
             <Typography
-              sx={{
-                fontSize: 22,
-                fontWeight: 800,
-                letterSpacing: '-0.3px',
-                lineHeight: 1.1,
-                background: 'linear-gradient(135deg, #818cf8 0%, #6366f1 45%, #ec4899 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
+              component="div"
+              sx={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.3px', lineHeight: 1.1 }}
             >
-              SmartCon
+              <Box component="span" sx={{ color: 'text.primary' }}>smart</Box>
+              <Box component="span" sx={{ color: '#2563eb' }}>Con</Box>
             </Typography>
             <Typography sx={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, color: 'text.secondary', textTransform: 'uppercase' }}>
               Smart Home
@@ -112,7 +105,7 @@ export function LoginPage() {
             />
 
             <Box sx={{ textAlign: 'right', mt: -1 }}>
-              <Link to="/forgot-password" style={{ color: '#6366f1', textDecoration: 'none', fontSize: 14 }}>
+              <Link to="/forgot-password" style={{ color: '#2563eb', textDecoration: 'none', fontSize: 14 }}>
                 Forgot password?
               </Link>
             </Box>
@@ -127,7 +120,7 @@ export function LoginPage() {
           <Box sx={{ textAlign: 'center' }}>
             <Typography color="text.secondary" variant="body2">
               Don't have an account?{' '}
-              <Link to="/register" style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 600 }}>
+              <Link to="/register" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>
                 Sign up
               </Link>
             </Typography>
