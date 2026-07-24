@@ -1,0 +1,170 @@
+import { useBLEStore } from '@/store/bleStore'
+import type { BLECommand } from '@/types'
+
+const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b'
+const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8'
+
+class BLEService {
+  private device: BluetoothDevice | null = null
+  private server: BluetoothRemoteGATTServer | null = null
+  private characteristic: BluetoothRemoteGATTCharacteristic | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private isReconnecting = false
+
+  isSupported(): boolean {
+    return 'bluetooth' in navigator
+  }
+
+  async scan(): Promise<void> {
+    if (!this.isSupported()) throw new Error('Web Bluetooth is not supported in this browser')
+
+    const store = useBLEStore.getState()
+    store.setStatus('scanning')
+    store.setScannedDevices([])
+
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [SERVICE_UUID] }],
+        optionalServices: [SERVICE_UUID],
+      })
+
+      store.addScannedDevice({
+        deviceId: device.id,
+        name: device.name ?? 'Unknown Device',
+      })
+
+      await this.connectToDevice(device)
+    } catch (err) {
+      if ((err as Error).name !== 'NotFoundError') {
+        store.setStatus('error')
+        store.setError((err as Error).message)
+      } else {
+        store.setStatus('idle')
+      }
+    }
+  }
+
+  async connectToDevice(device: BluetoothDevice): Promise<void> {
+    const store = useBLEStore.getState()
+    store.setStatus('connecting')
+
+    try {
+      this.device = device
+      this.device.addEventListener('gattserverdisconnected', this.onDisconnected.bind(this))
+
+      this.server = await this.device.gatt!.connect()
+      const service = await this.server.getPrimaryService(SERVICE_UUID)
+      this.characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID)
+
+      await this.characteristic.startNotifications()
+      this.characteristic.addEventListener('characteristicvaluechanged', this.onNotification.bind(this))
+
+      store.setStatus('connected')
+      store.setConnectedDevice({ deviceId: device.id, name: device.name ?? 'Unknown Device' })
+      store.addSavedDevice({ deviceId: device.id, name: device.name ?? 'Unknown Device' })
+      store.setError(null)
+    } catch (err) {
+      store.setStatus('error')
+      store.setError((err as Error).message)
+      throw err
+    }
+  }
+
+  async connectById(deviceId: string, deviceName: string): Promise<void> {
+    const store = useBLEStore.getState()
+    store.setStatus('connecting')
+
+    try {
+      const devices = await navigator.bluetooth.getDevices()
+      const device = devices.find((d) => d.id === deviceId)
+
+      if (!device) {
+        throw new Error('Device not found. Please scan to reconnect.')
+      }
+
+      await this.connectToDevice(device)
+    } catch (err) {
+      store.setStatus('error')
+      store.setError((err as Error).message)
+    }
+  }
+
+  disconnect(): void {
+    this.isReconnecting = false
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    if (this.device?.gatt?.connected) {
+      this.device.gatt.disconnect()
+    }
+    this.cleanup()
+  }
+
+  async sendCommand(command: BLECommand): Promise<void> {
+    if (!this.characteristic) throw new Error('Not connected to any device')
+
+    const encoder = new TextEncoder()
+    const data = encoder.encode(command)
+    await this.characteristic.writeValueWithResponse(data)
+    useBLEStore.getState().setLastCommand(command)
+  }
+
+  async requestStatus(): Promise<void> {
+    await this.sendCommand('STATUS')
+  }
+
+  private onNotification(event: Event): void {
+    const target = event.target as BluetoothRemoteGATTCharacteristic
+    const decoder = new TextDecoder()
+    const text = decoder.decode(target.value)
+
+    try {
+      const json = JSON.parse(text) as Record<string, unknown>
+      useBLEStore.getState().setLastResponse(json)
+    } catch {
+      useBLEStore.getState().setLastResponse({ raw: text })
+    }
+  }
+
+  private onDisconnected(): void {
+    const store = useBLEStore.getState()
+    store.setStatus('disconnected')
+
+    if (this.isReconnecting) return
+    this.isReconnecting = true
+    this.scheduleReconnect()
+  }
+
+  private scheduleReconnect(attempt = 1): void {
+    if (!this.device || attempt > 5) {
+      this.isReconnecting = false
+      useBLEStore.getState().setStatus('error')
+      return
+    }
+
+    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000)
+    this.reconnectTimer = setTimeout(async () => {
+      try {
+        await this.connectToDevice(this.device!)
+        this.isReconnecting = false
+      } catch {
+        this.scheduleReconnect(attempt + 1)
+      }
+    }, delay)
+  }
+
+  private cleanup(): void {
+    this.server = null
+    this.characteristic = null
+    useBLEStore.getState().setStatus('disconnected')
+    useBLEStore.getState().setConnectedDevice(null)
+  }
+
+  getConnectionStatus() {
+    return useBLEStore.getState().status
+  }
+
+  isConnected(): boolean {
+    return this.device?.gatt?.connected === true
+  }
+}
+
+export const bleService = new BLEService()

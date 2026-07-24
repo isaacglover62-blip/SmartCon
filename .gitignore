@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+.env
+*.local
+
+# Java / Maven
+backend/target/
+backend/.mvn/
+*.class
+*.jar
+*.war
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+
+# Local tool config (not part of the project)
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+.dockerignore
