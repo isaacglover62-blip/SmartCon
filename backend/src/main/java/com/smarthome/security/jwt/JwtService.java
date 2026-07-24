@@ -4,11 +4,14 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -38,11 +41,40 @@ public class JwtService {
         return claimsResolver.apply(extractAllClaims(token));
     }
 
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails, jwtProperties.getExpiration());
+    }
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails, jwtProperties.getRefreshExpiration());
+    }
+
+    private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     /** Validates token signature and expiry only (not tied to a specific user). */
     public boolean isTokenValid(String token) {
         try {
             extractAllClaims(token);
             return !isTokenExpired(token);
+        } catch (JwtException e) {
+            log.debug("JWT validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /** Validates token signature, expiry, and that the username matches. */
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        try {
+            String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (JwtException e) {
             log.debug("JWT validation failed: {}", e.getMessage());
             return false;
