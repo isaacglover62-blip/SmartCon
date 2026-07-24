@@ -1,0 +1,1 @@
+org.springframework.boot.env.EnvironmentPostProcessor=com.smarthome.config.DatabaseUrlNormalizer
