@@ -1,25 +1,39 @@
 import { useState, useEffect } from 'react'
 import { Box, Button, Card, CardContent, Typography, IconButton, Slide } from '@mui/material'
-import { Close, GetApp } from '@mui/icons-material'
+import { Close, GetApp, IosShare } from '@mui/icons-material'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+}
+
+function isInStandaloneMode() {
+  return ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    || window.matchMedia('(display-mode: standalone)').matches
+}
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [show, setShow] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const ios = isIos()
 
   useEffect(() => {
-    // Don't show if already dismissed this session
     if (sessionStorage.getItem('pwa-install-dismissed')) return
+    if (isInStandaloneMode()) return
+
+    if (ios) {
+      setTimeout(() => setShow(true), 3000)
+      return
+    }
 
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      // Small delay so it doesn't appear immediately on load
       setTimeout(() => setShow(true), 3000)
     }
 
@@ -66,14 +80,22 @@ export function InstallPrompt() {
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" fontWeight={700}>Install SmartCon</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Add to your home screen for quick access
-                </Typography>
+                {ios ? (
+                  <Typography variant="caption" color="text.secondary">
+                    Tap <IosShare sx={{ fontSize: 12, verticalAlign: 'middle' }} /> then <strong>Add to Home Screen</strong>
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    Add to your home screen for quick access
+                  </Typography>
+                )}
               </Box>
               <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-                <Button size="small" variant="contained" startIcon={<GetApp />} onClick={handleInstall}>
-                  Install
-                </Button>
+                {!ios && (
+                  <Button size="small" variant="contained" startIcon={<GetApp />} onClick={handleInstall}>
+                    Install
+                  </Button>
+                )}
                 <IconButton size="small" onClick={handleDismiss}>
                   <Close fontSize="small" />
                 </IconButton>
