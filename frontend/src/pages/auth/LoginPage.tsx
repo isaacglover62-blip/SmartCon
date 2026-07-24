@@ -47,11 +47,34 @@ export function LoginPage() {
   return (
     <Box>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Box sx={{ width: 64, height: 64, mx: 'auto', mb: 2 }}>
-          <img src="/smartcon-logo.png" alt="SmartCon" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        {/* Logo + brand */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2.5 }}>
+          <Box sx={{ width: 44, height: 44, flexShrink: 0, filter: 'drop-shadow(0 0 8px rgba(99,102,241,0.5))' }}>
+            <img src="/smartcon-logo.png" alt="SmartCon" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </Box>
+          <Box sx={{ textAlign: 'left' }}>
+            <Typography
+              sx={{
+                fontSize: 22,
+                fontWeight: 800,
+                letterSpacing: '-0.3px',
+                lineHeight: 1.1,
+                background: 'linear-gradient(135deg, #818cf8 0%, #6366f1 45%, #ec4899 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              SmartCon
+            </Typography>
+            <Typography sx={{ fontSize: 9, fontWeight: 500, letterSpacing: 2, color: 'text.secondary', textTransform: 'uppercase' }}>
+              Smart Home
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="h4" fontWeight={700} gutterBottom>Welcome back</Typography>
-        <Typography color="text.secondary">Sign in to your SmartHome dashboard</Typography>
+
+        <Typography variant="h5" fontWeight={700} gutterBottom>Welcome back</Typography>
+        <Typography color="text.secondary" variant="body2">Sign in to your SmartHome dashboard</Typography>
       </Box>
 
       <Card>

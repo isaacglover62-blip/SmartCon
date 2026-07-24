@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { ThemeProvider, CssBaseline } from '@mui/material'
@@ -8,6 +8,7 @@ import { AppRouter } from '@/router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
+import { SplashScreen } from '@/components/pwa/SplashScreen'
 
 function sessionToUser(session: { user: { id: string; email?: string; user_metadata?: Record<string, string> } }) {
   const meta = session.user.user_metadata ?? {}
@@ -24,6 +25,7 @@ export default function App() {
   const { mode } = useThemeStore()
   const theme = createAppTheme(mode)
   const { setAuth, logout } = useAuthStore()
+  const [splashDone, setSplashDone] = useState(false)
 
   useEffect(() => {
     // On mount, sync from real Supabase session if one exists
@@ -52,6 +54,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
       <BrowserRouter>
         <AppRouter />
       </BrowserRouter>
