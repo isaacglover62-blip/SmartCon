@@ -25,6 +25,9 @@ server:
   servlet:
     context-path: /api
 
+supabase:
+  jwks-uri: ${SUPABASE_JWKS_URI:https://xinztwrablrkifyrsbfo.supabase.co/auth/v1/.well-known/jwks.json}
+
 app:
   jwt:
     secret: ${SUPABASE_JWT_SECRET:fallback-dev-secret-min-32-chars-long-enough}
