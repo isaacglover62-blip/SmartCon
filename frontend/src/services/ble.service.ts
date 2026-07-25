@@ -23,8 +23,16 @@ class BLEService {
     store.setScannedDevices([])
 
     try {
+      // Multiple filters so ESP32 is found whether it advertises by service UUID or by name
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }],
+        filters: [
+          { services: [SERVICE_UUID] },
+          { name: 'SmartCon' },
+          { namePrefix: 'SmartCon' },
+          { namePrefix: 'ESP32' },
+          { namePrefix: 'Arduino' },
+        ],
+        // Must list the service here so Chrome allows us to access it after connect
         optionalServices: [SERVICE_UUID],
       })
 
@@ -52,12 +60,17 @@ class BLEService {
       this.device = device
       this.device.addEventListener('gattserverdisconnected', this.onDisconnected.bind(this))
 
-      this.server = await this.device.gatt!.connect()
+      if (!this.device.gatt) throw new Error('GATT server not available on this device')
+
+      this.server = await this.device.gatt.connect()
       const service = await this.server.getPrimaryService(SERVICE_UUID)
       this.characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID)
 
-      await this.characteristic.startNotifications()
-      this.characteristic.addEventListener('characteristicvaluechanged', this.onNotification.bind(this))
+      // Only start notifications if the characteristic supports it
+      if (this.characteristic.properties.notify) {
+        await this.characteristic.startNotifications()
+        this.characteristic.addEventListener('characteristicvaluechanged', this.onNotification.bind(this))
+      }
 
       store.setStatus('connected')
       store.setConnectedDevice({ deviceId: device.id, name: device.name ?? 'Unknown Device' })
@@ -70,7 +83,7 @@ class BLEService {
     }
   }
 
-  async connectById(deviceId: string, deviceName: string): Promise<void> {
+  async connectById(deviceId: string, _deviceName: string): Promise<void> {
     const store = useBLEStore.getState()
     store.setStatus('connecting')
 
@@ -79,7 +92,11 @@ class BLEService {
       const device = devices.find((d) => d.id === deviceId)
 
       if (!device) {
-        throw new Error('Device not found. Please scan to reconnect.')
+        // getDevices() only returns previously permitted devices.
+        // If not found, fall back to a fresh scan so the user can re-select.
+        store.setStatus('idle')
+        store.setError('Device not found in cache. Tap "Scan & Connect" to reconnect.')
+        return
       }
 
       await this.connectToDevice(device)
@@ -103,7 +120,14 @@ class BLEService {
 
     const encoder = new TextEncoder()
     const data = encoder.encode(command)
-    await this.characteristic.writeValueWithResponse(data)
+
+    // Use whichever write mode the characteristic supports
+    if (this.characteristic.properties.writeWithoutResponse) {
+      await this.characteristic.writeValueWithoutResponse(data)
+    } else {
+      await this.characteristic.writeValueWithResponse(data)
+    }
+
     useBLEStore.getState().setLastCommand(command)
   }
 
