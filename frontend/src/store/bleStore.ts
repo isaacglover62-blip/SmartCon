@@ -11,7 +11,6 @@ interface BLEState {
   lastCommand: string | null
   lastResponse: Record<string, unknown> | null
   errorMessage: string | null
-  relayUrl: string
   setStatus: (status: BLEStatus) => void
   setConnectedDevice: (device: BLEDevice | null) => void
   setScannedDevices: (devices: BLEDevice[]) => void
@@ -22,7 +21,6 @@ interface BLEState {
   setLastCommand: (cmd: string | null) => void
   setLastResponse: (res: Record<string, unknown> | null) => void
   setError: (msg: string | null) => void
-  setRelayUrl: (url: string) => void
 }
 
 export const useBLEStore = create<BLEState>()((set, get) => ({
@@ -33,7 +31,6 @@ export const useBLEStore = create<BLEState>()((set, get) => ({
   lastCommand: null,
   lastResponse: null,
   errorMessage: null,
-  relayUrl: localStorage.getItem('relay-url') ?? '',
 
   setStatus: (status) => set({ status }),
   setConnectedDevice: (device) => set({ connectedDevice: device }),
@@ -63,8 +60,4 @@ export const useBLEStore = create<BLEState>()((set, get) => ({
   setLastCommand: (cmd) => set({ lastCommand: cmd }),
   setLastResponse: (res) => set({ lastResponse: res }),
   setError: (msg) => set({ errorMessage: msg }),
-  setRelayUrl: (url) => {
-    localStorage.setItem('relay-url', url)
-    set({ relayUrl: url })
-  },
 }))
