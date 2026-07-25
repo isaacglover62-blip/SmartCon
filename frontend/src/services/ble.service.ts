@@ -1,8 +1,22 @@
 import { useBLEStore } from '@/store/bleStore'
 import type { BLECommand } from '@/types'
 
-const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b'
-const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8'
+// All common ESP32 BLE service UUIDs used in Arduino sketches
+const CANDIDATE_SERVICES = [
+  '4fafc201-1fb5-459e-8fcc-c5c9c331914b', // Espressif default example
+  '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART Service
+  '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10 style
+  '0000fff0-0000-1000-8000-00805f9b34fb', // Generic custom
+  '0000ab00-0000-1000-8000-00805f9b34fb', // Another common one
+]
+
+const CANDIDATE_CHARACTERISTICS = [
+  'beb5483e-36e1-4688-b7f5-ea07361b26a8', // Espressif default example
+  '6e400002-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART TX (write)
+  '6e400003-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART RX (notify)
+  '0000ffe1-0000-1000-8000-00805f9b34fb', // HM-10 characteristic
+  '0000fff1-0000-1000-8000-00805f9b34fb', // Generic write char
+]
 
 class BLEService {
   private device: BluetoothDevice | null = null
@@ -23,11 +37,9 @@ class BLEService {
     store.setScannedDevices([])
 
     try {
-      // acceptAllDevices shows every BLE device in range so ESP32 always appears
-      // optionalServices grants access to our service UUID after the user selects the device
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: [SERVICE_UUID],
+        optionalServices: CANDIDATE_SERVICES,
       })
 
       store.addScannedDevice({
@@ -57,13 +69,19 @@ class BLEService {
       if (!this.device.gatt) throw new Error('GATT server not available on this device')
 
       this.server = await this.device.gatt.connect()
-      const service = await this.server.getPrimaryService(SERVICE_UUID)
-      this.characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID)
 
-      // Only start notifications if the characteristic supports it
-      if (this.characteristic.properties.notify) {
-        await this.characteristic.startNotifications()
-        this.characteristic.addEventListener('characteristicvaluechanged', this.onNotification.bind(this))
+      // Discover the first working service + writable characteristic
+      const { characteristic } = await this.discoverCharacteristic(this.server)
+      this.characteristic = characteristic
+
+      // Only start notifications if supported
+      if (this.characteristic.properties.notify || this.characteristic.properties.indicate) {
+        try {
+          await this.characteristic.startNotifications()
+          this.characteristic.addEventListener('characteristicvaluechanged', this.onNotification.bind(this))
+        } catch {
+          // Notifications not available — commands still work
+        }
       }
 
       store.setStatus('connected')
@@ -77,6 +95,52 @@ class BLEService {
     }
   }
 
+  // Try each candidate service/characteristic until one works
+  private async discoverCharacteristic(
+    server: BluetoothRemoteGATTServer
+  ): Promise<{ service: BluetoothRemoteGATTService; characteristic: BluetoothRemoteGATTCharacteristic }> {
+    for (const serviceUuid of CANDIDATE_SERVICES) {
+      let service: BluetoothRemoteGATTService
+      try {
+        service = await server.getPrimaryService(serviceUuid)
+      } catch {
+        continue // this service not on device, try next
+      }
+
+      for (const charUuid of CANDIDATE_CHARACTERISTICS) {
+        try {
+          const characteristic = await service.getCharacteristic(charUuid)
+          const p = characteristic.properties
+          if (p.write || p.writeWithoutResponse) {
+            console.info(`[BLE] Connected via service ${serviceUuid} / char ${charUuid}`)
+            return { service, characteristic }
+          }
+        } catch {
+          continue
+        }
+      }
+
+      // No matching characteristic in candidates — get ALL characteristics from this service
+      try {
+        const allChars = await service.getCharacteristics()
+        const writable = allChars.find(
+          (c) => c.properties.write || c.properties.writeWithoutResponse
+        )
+        if (writable) {
+          console.info(`[BLE] Connected via service ${serviceUuid} / discovered char ${writable.uuid}`)
+          return { service, characteristic: writable }
+        }
+      } catch {
+        continue
+      }
+    }
+
+    throw new Error(
+      'Could not find a writable BLE characteristic on this device. ' +
+      'Make sure the ESP32 is running the SmartCon sketch and is advertising correctly.'
+    )
+  }
+
   async connectById(deviceId: string, _deviceName: string): Promise<void> {
     const store = useBLEStore.getState()
     store.setStatus('connecting')
@@ -86,10 +150,8 @@ class BLEService {
       const device = devices.find((d) => d.id === deviceId)
 
       if (!device) {
-        // getDevices() only returns previously permitted devices.
-        // If not found, fall back to a fresh scan so the user can re-select.
         store.setStatus('idle')
-        store.setError('Device not found in cache. Tap "Scan & Connect" to reconnect.')
+        store.setError('Device not in cache. Tap "Scan & Connect" to reconnect.')
         return
       }
 
@@ -115,7 +177,6 @@ class BLEService {
     const encoder = new TextEncoder()
     const data = encoder.encode(command)
 
-    // Use whichever write mode the characteristic supports
     if (this.characteristic.properties.writeWithoutResponse) {
       await this.characteristic.writeValueWithoutResponse(data)
     } else {
