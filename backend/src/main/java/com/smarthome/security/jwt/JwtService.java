@@ -23,13 +23,7 @@ public class JwtService {
     private final JwtProperties jwtProperties;
 
     private SecretKey getSigningKey() {
-        String secret = jwtProperties.getSecret();
-        byte[] keyBytes;
-        try {
-            keyBytes = Base64.getDecoder().decode(secret);
-        } catch (IllegalArgumentException e) {
-            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        }
+        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -72,7 +66,7 @@ public class JwtService {
             extractAllClaims(token);
             return !isTokenExpired(token);
         } catch (JwtException e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
+            log.warn("JWT validation failed: {}", e.getMessage());
             return false;
         }
     }
@@ -83,7 +77,7 @@ public class JwtService {
             String username = extractUsername(token);
             return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (JwtException e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
+            log.warn("JWT validation failed: {}", e.getMessage());
             return false;
         }
     }

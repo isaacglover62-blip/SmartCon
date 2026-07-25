@@ -22,6 +22,7 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final HomeRepository homeRepository;
 
+    @Transactional(readOnly = true)
     public List<RoomResponse> getRooms(UUID homeId, User user) {
         verifyHomeAccess(homeId, user);
         return roomRepository.findByHomeIdOrderBySortOrderAsc(homeId)

@@ -24,11 +24,13 @@ public class DeviceService {
     private final HomeRepository homeRepository;
     private final RoomRepository roomRepository;
 
+    @Transactional(readOnly = true)
     public List<DeviceResponse> getDevices(UUID homeId, User user) {
         verifyAccess(homeId, user);
         return deviceRepository.findByHomeId(homeId).stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public DeviceResponse getDevice(UUID homeId, UUID deviceId, User user) {
         verifyAccess(homeId, user);
         return deviceRepository.findByIdAndHomeId(deviceId, homeId)
@@ -36,6 +38,7 @@ public class DeviceService {
                 .orElseThrow(() -> AppException.notFound("Device not found"));
     }
 
+    @Transactional(readOnly = true)
     public List<DeviceResponse> getFavorites(UUID homeId, User user) {
         verifyAccess(homeId, user);
         return deviceRepository.findByHomeIdAndFavoriteTrue(homeId).stream().map(this::toResponse).toList();

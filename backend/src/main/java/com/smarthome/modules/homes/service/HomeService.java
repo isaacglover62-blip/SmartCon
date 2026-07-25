@@ -19,11 +19,13 @@ public class HomeService {
 
     private final HomeRepository homeRepository;
 
+    @Transactional(readOnly = true)
     public List<HomeResponse> getHomes(User user) {
         return homeRepository.findByOwnerId(user.getId())
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public HomeResponse getHome(UUID id, User user) {
         return homeRepository.findByIdAndOwnerId(id, user.getId())
                 .map(this::toResponse)
