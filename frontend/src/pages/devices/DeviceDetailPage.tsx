@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Box, Typography, Button, Card, CardContent, Grid, Chip, Slider, IconButton } from '@mui/material'
-import { ArrowBack, Bluetooth, Star, StarBorder } from '@mui/icons-material'
+import {
+  Box, Typography, Button, Card, CardContent, Grid, Chip, IconButton,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+} from '@mui/material'
+import { ArrowBack, Bluetooth, Star, StarBorder, Delete } from '@mui/icons-material'
 import { useHomeStore } from '@/store/homeStore'
 import { bleService } from '@/services/ble.service'
 import { useBLEStore } from '@/store/bleStore'
@@ -10,10 +14,27 @@ import toast from 'react-hot-toast'
 export function DeviceDetailPage() {
   const { deviceId } = useParams<{ deviceId: string }>()
   const navigate = useNavigate()
-  const { devices, updateDevice } = useHomeStore()
+  const { devices, updateDevice, removeDevice } = useHomeStore()
   const { status } = useBLEStore()
   const device = devices.find((d) => d.id === deviceId)
   const isConnected = status === 'connected'
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!device) return
+    setDeleting(true)
+    try {
+      await homeService.deleteDevice(device.homeId, device.id)
+      removeDevice(device.id)
+      toast.success(`${device.name} deleted`)
+      navigate('/devices')
+    } catch {
+      toast.error('Failed to delete device')
+      setDeleting(false)
+      setDeleteOpen(false)
+    }
+  }
 
   if (!device) {
     return (
@@ -44,6 +65,9 @@ export function DeviceDetailPage() {
         <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>{device.name}</Typography>
         <IconButton onClick={handleFavorite} color={device.favorite ? 'warning' : 'default'}>
           {device.favorite ? <Star /> : <StarBorder />}
+        </IconButton>
+        <IconButton onClick={() => setDeleteOpen(true)} color="error">
+          <Delete />
         </IconButton>
       </Box>
 
@@ -131,6 +155,19 @@ export function DeviceDetailPage() {
           </Card>
         </Grid>
       </Grid>
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete {device.name}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>This will permanently remove this device. This cannot be undone.</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
