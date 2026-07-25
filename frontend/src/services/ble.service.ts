@@ -23,16 +23,10 @@ class BLEService {
     store.setScannedDevices([])
 
     try {
-      // Multiple filters so ESP32 is found whether it advertises by service UUID or by name
+      // acceptAllDevices shows every BLE device in range so ESP32 always appears
+      // optionalServices grants access to our service UUID after the user selects the device
       const device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { services: [SERVICE_UUID] },
-          { name: 'SmartCon' },
-          { namePrefix: 'SmartCon' },
-          { namePrefix: 'ESP32' },
-          { namePrefix: 'Arduino' },
-        ],
-        // Must list the service here so Chrome allows us to access it after connect
+        acceptAllDevices: true,
         optionalServices: [SERVICE_UUID],
       })
 
