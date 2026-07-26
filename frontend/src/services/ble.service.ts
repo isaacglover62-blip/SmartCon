@@ -175,7 +175,7 @@ class BLEService {
     if (!this.characteristic) throw new Error('Not connected to any device')
 
     const encoder = new TextEncoder()
-    const data = encoder.encode(command)
+    const data = encoder.encode(command + '\n')
 
     if (this.characteristic.properties.writeWithoutResponse) {
       await this.characteristic.writeValueWithoutResponse(data)

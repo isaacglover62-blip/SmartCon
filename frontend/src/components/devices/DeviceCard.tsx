@@ -42,7 +42,8 @@ export function DeviceCard({ device, showRoom = false }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { status: bleStatus } = useBLEStore()
-  const { updateDevice, removeDevice } = useHomeStore()
+  const { updateDevice, removeDevice, rooms } = useHomeStore()
+  const roomName = rooms.find((r) => r.id === device.roomId)?.name
 
   const isConnected = bleStatus === 'connected'
   const icon = DEVICE_ICONS[device.type] ?? DEVICE_ICONS.default
@@ -76,7 +77,14 @@ export function DeviceCard({ device, showRoom = false }: Props) {
       SOCKET: next ? 'SOCKET_1_ON' : 'SOCKET_1_OFF',
     }
     const cmd = cmdMap[device.type]
-    if (cmd) await sendCommand(cmd)
+    if (cmd) {
+      try {
+        await bleService.sendCommand(cmd)
+      } catch {
+        setPower(!next)
+        toast.error('Command failed')
+      }
+    }
   }
 
   const handleFanSpeed = async (speed: number) => {
@@ -157,9 +165,9 @@ export function DeviceCard({ device, showRoom = false }: Props) {
             </Box>
           </Box>
 
-          {showRoom && device.roomId && (
+          {showRoom && device.roomId && roomName && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              {/* room name shown if available */}
+              {roomName}
             </Typography>
           )}
 

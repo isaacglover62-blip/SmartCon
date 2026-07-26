@@ -54,8 +54,9 @@ public class JwtService {
         }
     }
 
-    /** Validates a backend-issued HS256 token against a specific user. */
+    /** Validates a backend-issued HS256 token against a specific user. ES256 tokens are rejected. */
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        if ("ES256".equals(getAlgorithm(token))) return false;
         try {
             String username = extractUsername(token);
             return username.equals(userDetails.getUsername()) && !isHs256Expired(token);

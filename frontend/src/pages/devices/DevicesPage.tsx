@@ -153,10 +153,11 @@ export function DevicesPage() {
               <Controller
                 name="bleDeviceName"
                 control={control}
+                defaultValue="1"
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>Light Channel (which relay pin)</InputLabel>
-                    <Select {...field} label="Light Channel (which relay pin)">
+                    <Select {...field} value={field.value ?? '1'} label="Light Channel (which relay pin)">
                       <MenuItem value="1">Channel 1 — pin 2</MenuItem>
                       <MenuItem value="2">Channel 2 — pin 3</MenuItem>
                       <MenuItem value="3">Channel 3 — pin 4</MenuItem>
