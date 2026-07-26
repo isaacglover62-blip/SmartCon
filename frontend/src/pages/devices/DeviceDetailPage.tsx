@@ -9,13 +9,14 @@ import { useHomeStore } from '@/store/homeStore'
 import { bleService } from '@/services/ble.service'
 import { useBLEStore } from '@/store/bleStore'
 import { homeService } from '@/services/home.service'
+import type { BLECommand } from '@/types'
 import toast from 'react-hot-toast'
 
 export function DeviceDetailPage() {
   const { deviceId } = useParams<{ deviceId: string }>()
   const navigate = useNavigate()
   const { devices, updateDevice, removeDevice } = useHomeStore()
-  const { status } = useBLEStore()
+  const { status, lastCommand } = useBLEStore()
   const device = devices.find((d) => d.id === deviceId)
   const isConnected = status === 'connected'
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -26,6 +27,15 @@ export function DeviceDetailPage() {
     const n = parseInt(device?.bleDeviceName ?? '', 10)
     return n >= 1 && n <= 4 ? n : 1
   })()
+
+  const sendCmd = async (cmd: BLECommand) => {
+    try {
+      await bleService.sendCommand(cmd)
+      toast.success(`Sent: ${cmd}`, { duration: 1500 })
+    } catch (err) {
+      toast.error(`Failed to send ${cmd}: ${(err as Error).message}`)
+    }
+  }
 
   const handleDelete = async () => {
     if (!device) return
@@ -58,11 +68,7 @@ export function DeviceDetailPage() {
     } catch { toast.error('Failed') }
   }
 
-  const handleAllOff = async () => {
-    if (!isConnected) return toast.error('Not connected')
-    await bleService.sendCommand('ALL_OFF')
-    toast.success('All off command sent')
-  }
+  const handleAllOff = () => sendCmd('ALL_OFF')
 
   return (
     <Box sx={{ p: 3 }}>
@@ -108,18 +114,21 @@ export function DeviceDetailPage() {
                 <Bluetooth color={isConnected ? 'primary' : 'disabled'} />
                 <Typography variant="h6" fontWeight={600}>Controls</Typography>
                 {!isConnected && <Chip size="small" label="BLE not connected" color="warning" />}
+                {isConnected && lastCommand && (
+                  <Chip size="small" label={`Last: ${lastCommand}`} color="success" variant="outlined" />
+                )}
               </Box>
 
               <Grid container spacing={2}>
                 {device.type === 'LIGHT' && (
                   <Grid size={12}>
                     <Button fullWidth variant="contained" color="success"
-                      onClick={() => bleService.sendCommand(`LIGHT_${lightNum}_ON` as never)}
+                      onClick={() => sendCmd(`LIGHT_${lightNum}_ON` as BLECommand)}
                       disabled={!isConnected} sx={{ mb: 1 }}>
                       Light {lightNum} — ON
                     </Button>
                     <Button fullWidth variant="contained" color="error"
-                      onClick={() => bleService.sendCommand(`LIGHT_${lightNum}_OFF` as never)}
+                      onClick={() => sendCmd(`LIGHT_${lightNum}_OFF` as BLECommand)}
                       disabled={!isConnected}>
                       Light {lightNum} — OFF
                     </Button>
@@ -128,7 +137,7 @@ export function DeviceDetailPage() {
 
                 {device.type === 'FAN' && [0,1,2,3].map((n) => (
                   <Grid size={3} key={n}>
-                    <Button fullWidth variant="outlined" onClick={() => bleService.sendCommand(`FAN_${n}` as never)} disabled={!isConnected}>
+                    <Button fullWidth variant="outlined" onClick={() => sendCmd(`FAN_${n}` as BLECommand)} disabled={!isConnected}>
                       {n === 0 ? 'Off' : n === 1 ? 'Low' : n === 2 ? 'Med' : 'High'}
                     </Button>
                   </Grid>
@@ -136,30 +145,30 @@ export function DeviceDetailPage() {
 
                 {device.type === 'RGB_LIGHT' && (
                   <>
-                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#ef444420', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => bleService.sendCommand('RGB_255_0_0')} disabled={!isConnected}>Red</Button></Grid>
-                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#22c55e20', borderColor: '#22c55e', color: '#22c55e' }} onClick={() => bleService.sendCommand('RGB_0_255_0')} disabled={!isConnected}>Green</Button></Grid>
-                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#3b82f620', borderColor: '#3b82f6', color: '#3b82f6' }} onClick={() => bleService.sendCommand('RGB_0_0_255')} disabled={!isConnected}>Blue</Button></Grid>
+                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#ef444420', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => sendCmd('RGB_255_0_0')} disabled={!isConnected}>Red</Button></Grid>
+                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#22c55e20', borderColor: '#22c55e', color: '#22c55e' }} onClick={() => sendCmd('RGB_0_255_0')} disabled={!isConnected}>Green</Button></Grid>
+                    <Grid size={4}><Button fullWidth variant="outlined" sx={{ bgcolor: '#3b82f620', borderColor: '#3b82f6', color: '#3b82f6' }} onClick={() => sendCmd('RGB_0_0_255')} disabled={!isConnected}>Blue</Button></Grid>
                   </>
                 )}
 
                 {device.type === 'SOCKET' && (
                   <>
-                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => bleService.sendCommand('SOCKET_1_ON')} disabled={!isConnected}>Socket 1 ON</Button></Grid>
-                    <Grid size={6}><Button fullWidth variant="outlined" color="error" onClick={() => bleService.sendCommand('SOCKET_1_OFF')} disabled={!isConnected}>Socket 1 OFF</Button></Grid>
-                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => bleService.sendCommand('SOCKET_2_ON')} disabled={!isConnected}>Socket 2 ON</Button></Grid>
-                    <Grid size={6}><Button fullWidth variant="outlined" color="error" onClick={() => bleService.sendCommand('SOCKET_2_OFF')} disabled={!isConnected}>Socket 2 OFF</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => sendCmd('SOCKET_1_ON')} disabled={!isConnected}>Socket 1 ON</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="outlined" color="error" onClick={() => sendCmd('SOCKET_1_OFF')} disabled={!isConnected}>Socket 1 OFF</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => sendCmd('SOCKET_2_ON')} disabled={!isConnected}>Socket 2 ON</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="outlined" color="error" onClick={() => sendCmd('SOCKET_2_OFF')} disabled={!isConnected}>Socket 2 OFF</Button></Grid>
                   </>
                 )}
 
                 {device.type === 'CURTAIN' && (
                   <>
-                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => bleService.sendCommand('CURTAIN_OPEN')} disabled={!isConnected}>Open</Button></Grid>
-                    <Grid size={6}><Button fullWidth variant="outlined" onClick={() => bleService.sendCommand('CURTAIN_CLOSE')} disabled={!isConnected}>Close</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="contained" onClick={() => sendCmd('CURTAIN_OPEN')} disabled={!isConnected}>Open</Button></Grid>
+                    <Grid size={6}><Button fullWidth variant="outlined" onClick={() => sendCmd('CURTAIN_CLOSE')} disabled={!isConnected}>Close</Button></Grid>
                   </>
                 )}
 
                 <Grid size={12}>
-                  <Button fullWidth variant="outlined" color="warning" onClick={() => bleService.sendCommand('STATUS')} disabled={!isConnected}>Request Status</Button>
+                  <Button fullWidth variant="outlined" color="warning" onClick={() => sendCmd('STATUS')} disabled={!isConnected}>Request Status</Button>
                 </Grid>
                 <Grid size={12}>
                   <Button fullWidth variant="contained" color="error" onClick={handleAllOff} disabled={!isConnected}>ALL OFF</Button>
