@@ -21,6 +21,12 @@ export function DeviceDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Which relay channel this device controls (stored in bleDeviceName)
+  const lightNum = (() => {
+    const n = parseInt(device?.bleDeviceName ?? '', 10)
+    return n >= 1 && n <= 4 ? n : 1
+  })()
+
   const handleDelete = async () => {
     if (!device) return
     setDeleting(true)
@@ -105,12 +111,20 @@ export function DeviceDetailPage() {
               </Box>
 
               <Grid container spacing={2}>
-                {device.type === 'LIGHT' && [1,2,3,4].map((n) => (
-                  <Grid size={6} key={n}>
-                    <Button fullWidth variant="outlined" onClick={() => bleService.sendCommand(`LIGHT_${n}_ON` as never)} disabled={!isConnected}>Light {n} ON</Button>
-                    <Button fullWidth variant="outlined" color="error" sx={{ mt: 1 }} onClick={() => bleService.sendCommand(`LIGHT_${n}_OFF` as never)} disabled={!isConnected}>Light {n} OFF</Button>
+                {device.type === 'LIGHT' && (
+                  <Grid size={12}>
+                    <Button fullWidth variant="contained" color="success"
+                      onClick={() => bleService.sendCommand(`LIGHT_${lightNum}_ON` as never)}
+                      disabled={!isConnected} sx={{ mb: 1 }}>
+                      Light {lightNum} — ON
+                    </Button>
+                    <Button fullWidth variant="contained" color="error"
+                      onClick={() => bleService.sendCommand(`LIGHT_${lightNum}_OFF` as never)}
+                      disabled={!isConnected}>
+                      Light {lightNum} — OFF
+                    </Button>
                   </Grid>
-                ))}
+                )}
 
                 {device.type === 'FAN' && [0,1,2,3].map((n) => (
                   <Grid size={3} key={n}>

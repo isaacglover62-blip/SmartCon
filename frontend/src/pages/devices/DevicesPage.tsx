@@ -45,9 +45,10 @@ export function DevicesPage() {
   const [saving, setSaving] = useState(false)
   const { devices, rooms, activeHomeId, setDevices, addDevice } = useHomeStore()
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+  const watchedType = watch('type')
 
   useEffect(() => {
     if (activeHomeId) {
@@ -148,7 +149,25 @@ export function DevicesPage() {
                 </FormControl>
               )}
             />
-            <TextField label="BLE Device Name (Optional)" fullWidth {...register('bleDeviceName')} />
+            {watchedType === 'LIGHT' ? (
+              <Controller
+                name="bleDeviceName"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Light Channel (which relay pin)</InputLabel>
+                    <Select {...field} label="Light Channel (which relay pin)">
+                      <MenuItem value="1">Channel 1 — pin 2</MenuItem>
+                      <MenuItem value="2">Channel 2 — pin 3</MenuItem>
+                      <MenuItem value="3">Channel 3 — pin 4</MenuItem>
+                      <MenuItem value="4">Channel 4 — pin 5</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            ) : (
+              <TextField label="BLE Device Name (Optional)" fullWidth {...register('bleDeviceName')} />
+            )}
           </Box>
         </DialogContent>
         <DialogActions>

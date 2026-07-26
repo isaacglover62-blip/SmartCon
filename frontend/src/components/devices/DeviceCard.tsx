@@ -47,8 +47,10 @@ export function DeviceCard({ device, showRoom = false }: Props) {
   const isConnected = bleStatus === 'connected'
   const icon = DEVICE_ICONS[device.type] ?? DEVICE_ICONS.default
 
-  // Derive which light number this device controls from its name (e.g. "Light 2" → 2)
+  // Light channel stored in bleDeviceName ("1"–"4"), falls back to name parsing
   const lightNum = (() => {
+    const fromField = parseInt(device.bleDeviceName ?? '', 10)
+    if (fromField >= 1 && fromField <= 4) return fromField
     const m = device.name.match(/(\d+)\s*$/)
     const n = m ? parseInt(m[1], 10) : 1
     return n >= 1 && n <= 4 ? n : 1
