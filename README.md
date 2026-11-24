@@ -12,7 +12,7 @@ A production-ready Smart Home Progressive Web App for controlling ESP32 devices 
 | Forms | React Hook Form + Zod |
 | BLE | Web Bluetooth API |
 | Auth | JWT (backend) + Supabase (optional) |
-| Backend | Java 21 + Spring Boot 3 |
+| Backend | Java 25 + Spring Boot 3 |
 | DB | PostgreSQL (Supabase) + Flyway |
 | Deploy | Railway |
 
@@ -61,7 +61,7 @@ ESP32 responds with JSON:
 
 ### Prerequisites
 - Node.js 22+
-- Java 21
+- Java 25
 - Maven 3.9+
 - Docker + Docker Compose (for full stack)
 - PostgreSQL (or use Docker)
@@ -110,10 +110,9 @@ Swagger UI: `http://localhost:8080/api/swagger-ui.html`
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | JDBC PostgreSQL URL |
-| `DATABASE_USERNAME` | DB username |
-| `DATABASE_PASSWORD` | DB password |
-| `JWT_SECRET` | ≥256-bit secret for signing JWTs |
+| `DATABASE_URL` | PostgreSQL connection URL |
+| `SUPABASE_JWKS_URI` | Supabase project's JWKS URL for validating Supabase access tokens |
+| `SUPABASE_JWT_SECRET` | Random ≥256-bit signing key for backend-issued HS256 tokens |
 | `JWT_EXPIRATION` | Access token TTL in ms (default: 86400000 = 24h) |
 | `JWT_REFRESH_EXPIRATION` | Refresh token TTL in ms (default: 604800000 = 7d) |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
@@ -124,9 +123,11 @@ Swagger UI: `http://localhost:8080/api/swagger-ui.html`
 ### Frontend
 
 1. Create a new Railway service from the `frontend/` directory
-2. Set environment variables:
+2. Set these as build variables so Vite can embed them in the frontend:
    ```
    VITE_API_URL=https://your-backend.up.railway.app/api
+   VITE_SUPABASE_URL=https://your-project-id.supabase.co
+   VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
    ```
 3. Railway auto-detects the `Dockerfile` and builds/deploys
 
@@ -134,13 +135,14 @@ Swagger UI: `http://localhost:8080/api/swagger-ui.html`
 
 1. Create a new Railway service from the `backend/` directory
 2. Add a PostgreSQL database from Railway's marketplace
-3. Set environment variables:
+3. Set these backend service variables:
    ```
    DATABASE_URL=${{Postgres.DATABASE_URL}} (Railway variable reference)
-   JWT_SECRET=<generate a 64-char random string>
+   SUPABASE_JWT_SECRET=<your-supabase-jwt-secret>
    CORS_ORIGINS=https://your-frontend.up.railway.app
    ```
 4. Railway builds via `backend/Dockerfile`
+5. After both services deploy, replace the example hostnames above with their actual Railway domains and redeploy the frontend/backend as needed.
 
 ### Database
 
@@ -148,6 +150,26 @@ Flyway migrations run automatically on startup. The schema is defined in:
 ```
 backend/src/main/resources/db/migration/V1__init_schema.sql
 ```
+
+## Cloudflare Workers Deployment (Frontend)
+
+The frontend can be deployed as a static-assets Worker. The root `wrangler.jsonc` serves `frontend/dist` and routes SPA paths to `index.html`.
+
+In Cloudflare Workers Builds, connect the `SmartCon` repository and set:
+
+- Root directory: `/`
+- Build command: `cd frontend && npm ci --legacy-peer-deps && npm run build`
+- Deploy command: `npx wrangler deploy`
+
+Add these as build variables so Vite embeds them in the frontend:
+
+```
+VITE_API_URL=https://your-backend.onrender.com/api
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-supabase-public-anon-key>
+```
+
+Do not put database credentials or a Supabase service-role key in the frontend build variables.
 
 ## BLE Permissions
 
