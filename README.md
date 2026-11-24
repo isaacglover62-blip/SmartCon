@@ -82,16 +82,20 @@ npm run dev
 
 ```bash
 cd backend
-cp .env.example .env
-# Edit .env — set DATABASE_URL, JWT_SECRET, etc.
-
-# Option A: Docker Compose (database + backend together)
-docker compose up postgres -d
+# Export the required variables from backend/.env.example in your shell or IDE.
 mvn spring-boot:run
+```
 
-# Option B: Full Docker
+### Full stack with Docker Compose
+
+Run from the repository root. Copy the frontend environment example and set real Supabase values if you want authentication to work:
+
+```bash
+cp frontend/.env.example .env
 docker compose up --build
 ```
+
+Compose defaults `VITE_API_URL` to `http://localhost:8080/api`; placeholder Supabase values only allow the frontend to build and load.
 
 Backend runs at `http://localhost:8080/api`  
 Swagger UI: `http://localhost:8080/api/swagger-ui.html`

@@ -23,16 +23,21 @@ services:
       - "8080:8080"
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/smarthome
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
-      JWT_SECRET: change-this-in-production-very-long-secret-key-256-bits
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-local-development-only-change-before-production}
       CORS_ORIGINS: http://localhost:5173,http://localhost:4173
     depends_on:
       postgres:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://placeholder.supabase.co}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-placeholder}
     ports:
       - "5173:80"
     depends_on:
