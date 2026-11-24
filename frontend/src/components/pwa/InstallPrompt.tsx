@@ -64,15 +64,26 @@ export function InstallPrompt() {
       <Box
         sx={{
           position: 'fixed',
-          bottom: { xs: 72, md: 24 },
-          left: '50%',
-          transform: 'translateX(-50%)',
+          bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 },
+          left: 0,
+          right: 0,
           zIndex: 9999,
-          width: { xs: 'calc(100% - 32px)', sm: 400 },
-          maxWidth: 400,
+          display: 'flex',
+          justifyContent: 'center',
+          px: 2,
+          pointerEvents: 'none',
         }}
       >
-        <Card elevation={8} sx={{ border: '1px solid', borderColor: 'primary.main' }}>
+        <Card
+          elevation={8}
+          sx={{
+            width: '100%',
+            maxWidth: 400,
+            pointerEvents: 'auto',
+            border: '1px solid',
+            borderColor: 'primary.main',
+          }}
+        >
           <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ width: 40, height: 40, flexShrink: 0 }}>
