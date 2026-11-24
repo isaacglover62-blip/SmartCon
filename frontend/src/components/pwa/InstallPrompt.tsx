@@ -64,7 +64,7 @@ export function InstallPrompt() {
       <Box
         sx={{
           position: 'fixed',
-          bottom: { xs: 'calc(88px + env(safe-area-inset-bottom))', md: 24 },
+          bottom: { xs: 'calc(112px + env(safe-area-inset-bottom))', md: 24 },
           left: 0,
           right: 0,
           zIndex: 9999,
