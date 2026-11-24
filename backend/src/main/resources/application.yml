@@ -28,7 +28,7 @@ server:
     context-path: /api
 
 supabase:
-  jwks-uri: ${SUPABASE_JWKS_URI:https://xinztwrablrkifyrsbfo.supabase.co/auth/v1/.well-known/jwks.json}
+  jwks-uri: ${SUPABASE_JWKS_URI:https://vszvurxuyebxumbynxmq.supabase.co/auth/v1/.well-known/jwks.json}
 
 app:
   jwt:

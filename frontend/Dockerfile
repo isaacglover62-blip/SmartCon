@@ -1,7 +1,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Build-time env vars (Railway injects these as build args)
+# Build-time env vars supplied by the hosting platform or Docker Compose
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_API_URL
