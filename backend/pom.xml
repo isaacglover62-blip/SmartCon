@@ -21,6 +21,7 @@
         <java.version>25</java.version>
         <jjwt.version>0.12.5</jjwt.version>
         <lombok.version>1.18.48</lombok.version>
+        <flyway.version>13.13.0</flyway.version>
     </properties>
 
     <dependencies>
